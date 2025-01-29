@@ -95,14 +95,20 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         try:
             return [int(str_id) for str_id in query_string.split(",")]
         except ValueError:
-            raise ValidationError("Invalid parameter format. Ensure that the list contains only integers.")
+            raise ValidationError(
+                "Invalid parameter format. "
+                "Ensure that the list contains only integers."
+            )
 
     @staticmethod
     def validate_date_format(date_str):
         try:
             datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
-            raise ValidationError("Invalid date format. The correct format is YYYY-MM-DD.")
+            raise ValidationError(
+                "Invalid date format."
+                " The correct format is YYYY-MM-DD."
+            )
         return date_str
 
     def get_serializer_class(self):
@@ -130,10 +136,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = (
                 queryset.select_related("movie", "cinema_hall")
                 .annotate(
-                    total_capacity=F("cinema_hall__rows") * F("cinema_hall__seats_in_row"),
+                    total_capacity=F(
+                        "cinema_hall__rows"
+                    ) * F("cinema_hall__seats_in_row"),
+
                     tickets_count=Count("tickets")
                 )
-                .annotate(tickets_available=F("total_capacity") - F("tickets_count"))
+                .annotate(
+                    tickets_available=F("total_capacity") - F("tickets_count"))
             )
 
         return queryset.distinct()
