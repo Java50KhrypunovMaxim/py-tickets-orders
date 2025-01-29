@@ -88,16 +88,21 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = ("id", "movie_session", "row", "seat")
 
     def validate(self, attrs):
-        if not (0 <= attrs["row"] <= attrs["movie_session.cinema_hall.row"]):
-            raise serializers.ValidationError({
-                f"row: must be until {attrs["movie_session.cinema_hall.row"]}"
-            })
+        movie_session = attrs.get("movie_session")
+        cinema_hall = movie_session.cinema_hall if movie_session else None
 
-        if not (0 <= attrs["seat"] <= attrs["movie_session.cinema_hall.seat"]):
-            raise serializers.ValidationError({
-                f"seat: must be until "
-                f"{attrs["movie_session.cinema_hall.seat"]}"
-            })
+        if cinema_hall:
+            if not (1 <= attrs["row"] <= cinema_hall.rows):
+                raise serializers.ValidationError({
+                    "row": f"Row number must be between 1 and {cinema_hall.rows}."
+                })
+
+            if not (1 <= attrs["seat"] <= cinema_hall.seats_in_row):
+                raise serializers.ValidationError({
+                    "seat": f"Seat number must be between 1 and {cinema_hall.seats_in_row}."
+                })
+
+        return attrs
 
 
 class TicketDetailSerializer(serializers.ModelSerializer):

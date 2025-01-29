@@ -1,3 +1,5 @@
+from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.db.models import Count, F
 from rest_framework import viewsets
 from datetime import datetime
@@ -44,7 +46,13 @@ class MovieViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def _params_to_ints(query_string):
-        return [int(str_id) for str_id in query_string.split(",")]
+        try:
+            return [int(str_id) for str_id in query_string.split(",")]
+        except ValueError:
+            raise serializers.ValidationError("Invalid"
+                                              " parameter format. "
+                                              "Ensure that the list "
+                                              "contains only integers.")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -84,7 +92,18 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def _params_to_ints(query_string):
-        return [int(str_id) for str_id in query_string.split(",")]
+        try:
+            return [int(str_id) for str_id in query_string.split(",")]
+        except ValueError:
+            raise ValidationError("Invalid parameter format. Ensure that the list contains only integers.")
+
+    @staticmethod
+    def validate_date_format(date_str):
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            raise ValidationError("Invalid date format. The correct format is YYYY-MM-DD.")
+        return date_str
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -102,19 +121,19 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         if movie:
             queryset = queryset.filter(movie__id=int(movie))
+
         if date:
+            self.validate_date_format(date)
             queryset = queryset.filter(show_time__date=date)
 
         if self.action == "list":
             queryset = (
                 queryset.select_related("movie", "cinema_hall")
                 .annotate(
-                    total_capacity=F("cinema_hall__"
-                                     "rows") * F("cinema_hall__seats_in_row"),
+                    total_capacity=F("cinema_hall__rows") * F("cinema_hall__seats_in_row"),
                     tickets_count=Count("tickets")
                 )
-                .annotate(
-                    tickets_available=F("total_capacity") - F("tickets_count"))
+                .annotate(tickets_available=F("total_capacity") - F("tickets_count"))
             )
 
         return queryset.distinct()
