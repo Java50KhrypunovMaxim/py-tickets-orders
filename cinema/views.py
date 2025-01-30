@@ -6,9 +6,15 @@ from datetime import datetime
 
 from rest_framework.pagination import PageNumberPagination
 
-from cinema.models import (Genre, Actor,
-                           CinemaHall, Movie,
-                           MovieSession, Ticket, Order)
+from cinema.models import (
+    Genre,
+    Actor,
+    CinemaHall,
+    Movie,
+    MovieSession,
+    Ticket,
+    Order
+)
 
 from cinema.serializers import (
     GenreSerializer,
